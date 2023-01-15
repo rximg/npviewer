@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+dist-electron
+release
+*.local
+
+# Editor directories and files
+.vscode/.debug.env
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/*
+# lockfile
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+text.npy
+mini.npy
+12.npy
+cross.npy
+minigray.npy
+zero255.npy
+zero.npy
+00float.npy
+Gradient01.npy
+electron_imgwatch.code-workspace
+public/electron-vite-vue.gif
