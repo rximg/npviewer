@@ -53,7 +53,7 @@
       </a-layout-header>
       <a-layout-content class="box-content" ref="contentHandle">
         <div v-if="currentMat">
-          <NDArrayPixView :inputarr="currentMat.ndarray" :width="contentWidth" :height="winHeight - 100" />
+          <NDArrayPixView :inputarr="currentMat.ndarray" :width="winHeight-200" :height="winHeight - 100" />
         </div>
         <div v-else>
           <a-empty :style="{ height: winHeight - 100 + 'px' }" />
@@ -102,8 +102,8 @@ const current: {
 const { width: contentWidth, height: contentHeight } = useElementSize(contentHandle)
 const { width: thumbnailWidth, height: thumbnailHeight } = useElementSize(imageShowHandle)
 const { width: winWidth, height: winHeight } = useWindowSize()
-console.log('win', winWidth, winHeight)
-const heatmapElSize = { width: contentWidth.value, height: winHeight.value - 30 }
+// console.log('win', winWidth, winHeight)
+const heatmapElSize = { width: winHeight.value-200, height: winHeight.value - 30 }
 
 const currentMat = computed(() => {
   if (current.currentMat) {
@@ -152,19 +152,19 @@ const handleAxisChange = (event:number,index: number,name:string)=> {
     }
 
 function changeCurrentMat(path: string, index: number) {
+  imageShowHandle.value.width = thumbnailWidth.value
+  imageShowHandle.value.height = thumbnailWidth.value
   n.load(path, async (array) => {
     const temparr = ndarray(array.data, array.shape);
     current.currentMat = null
     current.index = index
     await nextTick()
-    // const heatmapElSize = { width: contentWidth.value, height: winHeight.value-30 }
+    // const heatmapElSize = { width: contentWidth.value, height: winHeight.value-100 }
     console.log('heatmap', heatmapElSize)
-    current.currentMat = new NdView(temparr, { width: 0, height: 0 },)
-    current.currentMat.drawImage(imageShowHandle.value,
-      {
-        width: thumbnailWidth.value,
-        height: thumbnailWidth.value
-      })
+    current.currentMat = new NdView(temparr, 
+          heatmapElSize,
+          imageShowHandle.value,)
+    current.currentMat.drawImage()
     console.log('ndaxis', current.currentMat, current.currentMat.ndaxis)
   });
 }

@@ -63,8 +63,9 @@ export class NdView {
   channelMode: "LINE" | "GRAY" | "GRAY_HEATMAP" | "RGB" | "HWC" | "BCHW" | "XCHW" = "RGB";
   sizeMode:"DEFAULT"|"RGB"="RGB";
   heatmapplot:Heatmap
+  thumbnailHandle:HTMLCanvasElement
 
-  constructor(store: ndarray, elsize: Size,) {
+  constructor(store: ndarray, elsize: Size,thumbnailHandle:HTMLCanvasElement,thumbnailSize:Size) {
     this.store = store;
     
     this.ndaxis = []
@@ -77,6 +78,8 @@ export class NdView {
     }
     this.step = {width:0,height:0}
     this.preprocessND(this.store)
+    // this.thumbnaiSize = thumbnailSize
+    this.thumbnailHandle = thumbnailHandle
     // this.canvasInfo = {
     //   mousePos :{x:0,y:0},
     // }
@@ -166,16 +169,17 @@ export class NdView {
       width:width,
       height:height
     }
-    // const stepx = Math.ceil(this.elementSize.width / MINSIZES['DEFAULT'].width);
-    // const stepy = Math.ceil(this.elementSize.height / MINSIZES['DEFAULT'].height);
+    const stepx = Math.ceil(this.elementSize.width / MINSIZES['DEFAULT'].width);
+    const stepy = Math.ceil(this.elementSize.height / MINSIZES['DEFAULT'].height);
     // this.step = {width:stepx,height:stepy}    
-    // this.ndregion = {
-    //   start: { x: 0, y: 0 },
-    //   end: {
-    //     x: stepx,
-    //     y: stepy
-    //   }
-    // }
+    this.ndregion = {
+      start: { x: 0, y: 0 },
+      end: {
+        x: stepx,
+        y: stepy
+      }
+    }
+    // console.log('in preprocessND',this.aspectShape,this.ndregion,this.channelMode,this.step,this.ndaxis,this.elementSize)
   }
 
   get_scroll_region(){
@@ -186,7 +190,7 @@ export class NdView {
       v_max:this.aspectShape.height - stepy,
       h_max:this.aspectShape.width - stepx
     }
-    console.log('scroll region',this.aspectShape,this.step,region)
+    // console.log('scroll region',this.aspectShape,this.step,region)
     return region
   }
 
@@ -226,7 +230,7 @@ export class NdView {
     } else if (this.channelMode == "RGB") {
       return this.store.hi(end_y, end_x).lo(start_y, start_x)
     } else if (this.channelMode == "HWC") {
-      console.log('ndaxis:',this.ndaxis)
+      // console.log('ndaxis:',this.ndaxis)
       return this.store.hi(end_y, end_x).lo(start_y, start_x).pick(null, null, this.ndaxis[2].value)
     } else if (this.channelMode == "BCHW") {
       return this.store.hi(end_y, end_x).lo(start_y, start_x).pick(this.ndaxis[0].value, null, null, null)
@@ -275,7 +279,7 @@ export class NdView {
     const tempContext = tempCanvas.getContext('2d') as CanvasRenderingContext2D;
     
     tempContext.putImageData(imageData, 0, 0);
-    console.log("temp",tempCanvas.width,tempCanvas.height,imageData)
+    // console.log("temp",tempCanvas.width,tempCanvas.height,imageData)
     return {
       imel:tempCanvas,
       imwidth:imwidth,
@@ -283,21 +287,46 @@ export class NdView {
     }
   }
 
-  drawImage(canvas,elsize) {
+  drawImage() {
     // TODO 画个框显示roi
-    canvas.width=elsize.width
-    canvas.height=elsize.height
-    console.log('draw image in canvas',elsize)
-    const context = canvas.getContext('2d')
+    // ndregion {
+    //   start: { x: start_x, y: start_y },
+    //   end: { x: end_x, y: end_y }
+    // }
+    const roi = this.ndregion 
+    // this.thumbnailHandle.width=elsize.width
+    // this.thumbnailHandle.height=elsize.height
+    // console.log('draw image in canvas',elsize)
+    const context = this.thumbnailHandle.getContext('2d')
+    const canvasWidth = this.thumbnailHandle.width
+    const canvasHeight = this.thumbnailHandle.height
     const {imel,imwidth,imheight} = this.getImageElement(this.getThumbnail(),context)
-    context.clearRect(0, 0, canvas.width, canvas.height)
-    // console.log('drawImage',imel,imwidth,imheight,this.scaleShape)
-    //https://developer.mozilla.org/zh-CN/docs/Web/API/CanvasRenderingContext2D/drawImage
+    context.clearRect(0, 0, canvasWidth, canvasWidth)
+    // Draw the roi rectangle
+    context.strokeStyle = "red";
+    context.lineWidth = 2;
+    // const {start_x,start_y,end_x,end_y} = roi
+    const {x:start_x,y:start_y} = roi.start
+    const {x:end_x,y:end_y} = roi.end
+    // const scaleX = canvas.width / (roi.end.x - roi.start.x);
+    // const scaleY = canvas.height / (roi.end.y - roi.start.y);
+    const scaleX = this.thumbnailHandle.width / imwidth;
+    const scaleY = this.thumbnailHandle.height / imheight;
+    const scaleRoi = {
+      start_x: start_x * scaleX,
+      start_y: start_y * scaleY,
+      end_x: end_x * scaleX,
+      end_y: end_y * scaleY
+    }
+    console.log("draw image roi",this.ndregion,{scaleX:scaleX,scaleY:scaleY},scaleRoi)
     context.drawImage(
-      imel, //规定要使用的图像、画布或视频。
-      0,0,//在画布上放置图像的 x 、y坐标位置。
-      canvas.width, canvas.height  //要使用的图像的宽度、高度
-    );
+      imel,
+      0,0,
+      this.thumbnailHandle.width, this.thumbnailHandle.height
+      );
+    context.strokeRect(scaleRoi.start_x, scaleRoi.start_y, scaleRoi.end_x - scaleRoi.start_x, scaleRoi.end_y - scaleRoi.start_y);
+    // context.strokeRect(roi.start.x / scaleX, roi.start.y / scaleY, (roi.end.x - roi.start.x) / scaleX, (roi.end.y - roi.start.y) / scaleY);
+    
   }
 
 

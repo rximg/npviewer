@@ -81,7 +81,8 @@ onMounted(
         const { v, h } = slider_value
         if (ndview_ist) {
           ndview_ist.set_region(v, h)
-          ndview_ist.viewAsPix(heatmapPlot)
+          ndview_ist.viewAsPix()
+          ndview_ist.drawImage()
           // console.log('get thumbnail', ndview_ist.getThumbnail())
         }
       }
